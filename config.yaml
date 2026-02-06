@@ -1,0 +1,49 @@
+download:
+  output_dir: "./downloads"
+  format: "mp4"
+  quality: "best"
+  proxy: null
+  cookies_file: null
+  user_agent: null
+  no_watermark: true
+
+watermark:
+  enabled: true
+  auto_detect: true
+  watermark_region:
+    x: null
+    y: null
+    width: null
+    height: null
+  method: "inpaint"
+  detection_method: "auto"
+  confidence_threshold: 0.7
+
+detector:
+  enabled: true
+  analyze_fingerprint: false
+
+fingerprint:
+  enabled: true
+  re_encode: true
+  change_bitrate: true
+  change_resolution: true
+  change_colorspace: true
+  add_noise: true
+
+transforms:
+  enabled: true
+  speed_change: true
+  speed_factor: 1.03
+  pitch_shift: true
+  horizontal_flip: false
+  crop_percent: 2
+  brightness_shift: 2
+  contrast_shift: 2
+  saturation_shift: 5
+  add_silence: true
+  silence_duration: 0.2
+
+metadata:
+  strip_metadata: true
+  randomize_date: true
