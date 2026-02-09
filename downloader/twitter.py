@@ -4,6 +4,7 @@ import yt_dlp
 from pathlib import Path
 from typing import Optional
 from .base import BaseDownloader, DownloadResult
+from .utils import get_best_format
 
 
 class TwitterDownloader(BaseDownloader):
@@ -16,9 +17,13 @@ class TwitterDownloader(BaseDownloader):
         return "twitter.com" in url.lower() or "x.com" in url.lower()
     
     def download(self, url: str) -> DownloadResult:
+        # Sử dụng helper function để lấy format tốt nhất cho Twitter
+        format_str = get_best_format(self.config, "twitter")
+
         ydl_opts = {
-            "format": "best",
+            "format": format_str,
             "outtmpl": str(self.output_dir / "%(title)s.%(ext)s"),
+            "merge_output_format": "mp4",
             "quiet": False,
             "no_warnings": False,
         }

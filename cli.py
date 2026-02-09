@@ -7,9 +7,9 @@ from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from utils import load_config, setup_logging, ensure_dir
-from downloader.manager import DownloadManager
-from processor import ProcessingPipeline
+from .utils import load_config, setup_logging, ensure_dir
+from .downloader.manager import DownloadManager
+from .processor import ProcessingPipeline
 
 app = typer.Typer(
     name="vdl-pro",
@@ -48,7 +48,11 @@ def download(
     output_dir = output or Path(config.get("download", {}).get("output_dir", "./downloads"))
     
     with console.status("[bold green]Downloading...", spinner="dots"):
-        manager = DownloadManager(output_dir, **config.get("download", {}))
+        download_config = config.get("download", {}).copy()
+        download_config.pop("output_dir", None)  # Remove to avoid duplicate
+        # Thêm quality config vào download_config
+        download_config["quality"] = config.get("quality", {})
+        manager = DownloadManager(output_dir, **download_config)
         result = manager.download(url)
     
     if result.success:
@@ -79,10 +83,10 @@ def detect(
     """Detect watermarks and fingerprints in a video/image file"""
     config = load_config()
     setup_logging()
-    
+
     console.print(f"Analyzing: {file_path.name}", style="cyan")
-    
-    from detector import WatermarkDetector, FingerprintAnalyzer
+
+    from .detector import WatermarkDetector, FingerprintAnalyzer
     
     watermark_detector = WatermarkDetector(config.get("watermark", {}))
     result = watermark_detector.detect_watermark(file_path)
@@ -241,20 +245,20 @@ def info():
 def check():
     """Check system dependencies"""
     console.print("[bold]Checking dependencies...\n", style="cyan")
-    
+
     try:
         import yt_dlp
         console.print("✓ yt-dlp installed", style="green")
     except ImportError:
         console.print("✗ yt-dlp not found", style="red")
-    
+
     try:
         import cv2
         console.print("✓ OpenCV installed", style="green")
     except ImportError:
         console.print("✗ OpenCV not found", style="red")
-    
-    from utils.ffmpeg_wrapper import FFmpegWrapper
+
+    from .utils.ffmpeg_wrapper import FFmpegWrapper
     version = FFmpegWrapper.get_version()
     if "FFmpeg not found" not in version:
         console.print(f"✓ {version}", style="green")

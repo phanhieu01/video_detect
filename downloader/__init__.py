@@ -7,6 +7,8 @@ from .tiktok import TikTokDownloader
 from .facebook import FacebookDownloader
 from .instagram import InstagramDownloader
 from .twitter import TwitterDownloader
+from .generic import GenericDownloader
+from .direct_url import DirectURLDownloader
 
 __all__ = [
     "BaseDownloader",
@@ -17,4 +19,6 @@ __all__ = [
     "FacebookDownloader",
     "InstagramDownloader",
     "TwitterDownloader",
+    "GenericDownloader",
+    "DirectURLDownloader",
 ]

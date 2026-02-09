@@ -2,11 +2,16 @@
 
 from pathlib import Path
 import random
+import tempfile
+import shutil
+import logging
 from utils.ffmpeg_wrapper import FFmpegWrapper
+
+logger = logging.getLogger(__name__)
 
 
 class VideoTransformer:
-    
+
     def __init__(self, config: dict = None):
         self.config = config or {}
         self.enabled = self.config.get("enabled", True)
@@ -20,33 +25,58 @@ class VideoTransformer:
         self.saturation_shift = self.config.get("saturation_shift", 5)
         self.add_silence = self.config.get("add_silence", True)
         self.silence_duration = self.config.get("silence_duration", 0.2)
-    
+
     def transform(
         self,
         input_path: Path,
         output_path: Path,
     ) -> bool:
+        temp_files = []
+
         try:
             temp_path = input_path
-            
+
             if self.speed_change:
-                temp_path = self._apply_speed_change(temp_path, output_path)
-            
+                new_temp = Path(tempfile.mktemp(suffix=".mp4"))
+                temp_files.append(new_temp)
+                temp_path = self._apply_speed_change(temp_path, new_temp)
+
             if self.horizontal_flip:
-                temp_path = self._apply_flip(temp_path, temp_path)
-            
+                new_temp = Path(tempfile.mktemp(suffix=".mp4"))
+                temp_files.append(new_temp)
+                temp_path = self._apply_flip(temp_path, new_temp)
+
             if self.crop_percent > 0:
-                temp_path = self._apply_crop(temp_path, temp_path)
-            
+                new_temp = Path(tempfile.mktemp(suffix=".mp4"))
+                temp_files.append(new_temp)
+                temp_path = self._apply_crop(temp_path, new_temp)
+
             if any([self.brightness_shift, self.contrast_shift, self.saturation_shift]):
-                temp_path = self._apply_color_adjust(temp_path, temp_path)
-            
+                new_temp = Path(tempfile.mktemp(suffix=".mp4"))
+                temp_files.append(new_temp)
+                temp_path = self._apply_color_adjust(temp_path, new_temp)
+
             if self.add_silence:
-                temp_path = self._apply_silence(temp_path, temp_path)
-            
+                new_temp = Path(tempfile.mktemp(suffix=".mp4"))
+                temp_files.append(new_temp)
+                temp_path = self._apply_silence(temp_path, new_temp)
+
+            # Copy final result to output
+            if temp_path != input_path:
+                shutil.copy(temp_path, output_path)
+
             return True
-        except Exception:
+        except Exception as e:
+            logger.error(f"Video transform failed: {e}", exc_info=True)
             return False
+        finally:
+            # Cleanup all temp files
+            for f in temp_files:
+                if f.exists():
+                    try:
+                        f.unlink()
+                    except Exception as e:
+                        logger.warning(f"Failed to delete temp file {f}: {e}")
     
     def _apply_speed_change(self, input_path: Path, output_path: Path) -> Path:
         factor = self.speed_factor + random.uniform(-0.01, 0.01)

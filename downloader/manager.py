@@ -8,6 +8,8 @@ from .tiktok import TikTokDownloader
 from .facebook import FacebookDownloader
 from .instagram import InstagramDownloader
 from .twitter import TwitterDownloader
+from .generic import GenericDownloader
+from .direct_url import DirectURLDownloader
 
 
 class DownloadManager:
@@ -20,11 +22,13 @@ class DownloadManager:
     
     def _init_downloaders(self):
         self.downloaders = [
+            DirectURLDownloader(self.output_dir, **self.config),  # Ưu tiên URL trực tiếp trước
             YouTubeDownloader(self.output_dir, **self.config),
             TikTokDownloader(self.output_dir, **self.config),
             FacebookDownloader(self.output_dir, **self.config),
             InstagramDownloader(self.output_dir, **self.config),
             TwitterDownloader(self.output_dir, **self.config),
+            GenericDownloader(self.output_dir, **self.config),
         ]
     
     def get_downloader(self, url: str) -> Optional[BaseDownloader]:

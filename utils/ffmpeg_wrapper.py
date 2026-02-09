@@ -36,12 +36,29 @@ class FFmpegWrapper:
             raise RuntimeError(f"FFmpeg error: {result.stderr}")
         
         return result.stdout
-    
+
+    @staticmethod
+    def has_audio_stream(input_path: Path) -> bool:
+        """Check if video has audio stream using ffprobe"""
+        try:
+            result = subprocess.run([
+                "ffprobe", "-v", "error",
+                "-select_streams", "a",
+                "-show_entries", "stream=codec_type",
+                "-of", "csv=p=0",
+                str(input_path)
+            ], capture_output=True, text=True, check=True)
+            return bool(result.stdout.strip())
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
     @staticmethod
     def strip_metadata(input_path: Path, output_path: Path) -> None:
         FFmpegWrapper.run_command([
             "-i", str(input_path),
             "-map_metadata", "-1",
+            "-map", "0:v",    # Map video stream
+            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
             "-c:v", "copy",
             "-c:a", "copy",
             str(output_path),
@@ -55,11 +72,17 @@ class FFmpegWrapper:
         bitrate: Optional[str] = None,
         crf: int = 23,
     ) -> None:
-        args = ["-i", str(input_path), "-c:v", codec, "-crf", str(crf)]
-        
+        args = [
+            "-i", str(input_path),
+            "-map", "0:v",    # Map video stream
+            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
+            "-c:v", codec,
+            "-crf", str(crf)
+        ]
+
         if bitrate:
             args.extend(["-b:v", bitrate])
-        
+
         args.extend(["-c:a", "aac", "-b:a", "192k", str(output_path)])
         FFmpegWrapper.run_command(args)
     
@@ -76,6 +99,8 @@ class FFmpegWrapper:
         FFmpegWrapper.run_command([
             "-i", str(input_path),
             "-vf", filter_str,
+            "-map", "0:v",    # Map video stream
+            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -86,19 +111,48 @@ class FFmpegWrapper:
         output_path: Path,
         factor: float,
     ) -> None:
-        filter_str = f"setpts={1/factor}*PTS,atempo={factor}"
-        FFmpegWrapper.run_command([
-            "-i", str(input_path),
-            "-filter:v", f"setpts={1/factor}*PTS",
-            "-filter:a", f"atempo={min(factor, 2.0)}",
-            str(output_path),
-        ])
+        has_audio = FFmpegWrapper.has_audio_stream(input_path)
+
+        if has_audio:
+            # Video có audio - áp dụng filter cho cả video và audio
+            atempo_filter = FFmpegWrapper._build_atempo_filter(factor)
+            FFmpegWrapper.run_command([
+                "-i", str(input_path),
+                "-filter:v", f"setpts={1/factor}*PTS",
+                "-filter:a", atempo_filter,
+                str(output_path),
+            ])
+        else:
+            # Video không có audio - chỉ áp dụng filter cho video
+            FFmpegWrapper.run_command([
+                "-i", str(input_path),
+                "-filter:v", f"setpts={1/factor}*PTS",
+                str(output_path),
+            ])
+
+    @staticmethod
+    def _build_atempo_filter(factor: float) -> str:
+        """Build atempo filter chain (atempo max is 2.0, need to chain for higher values)"""
+        if factor <= 2.0:
+            return f"atempo={factor}"
+
+        # Chain multiple atempo filters for factors > 2.0
+        filters = []
+        remaining = factor
+        while remaining > 1.0:
+            filters.append(f"atempo={min(remaining, 2.0)}")
+            remaining /= 2.0
+
+        return ",".join(filters)
     
     @staticmethod
     def horizontal_flip(input_path: Path, output_path: Path) -> None:
         FFmpegWrapper.run_command([
             "-i", str(input_path),
             "-vf", "hflip",
+            "-c:v", "libx264",  # Specify codec for video encoding
+            "-map", "0:v",    # Map video stream
+            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -113,6 +167,9 @@ class FFmpegWrapper:
         FFmpegWrapper.run_command([
             "-i", str(input_path),
             "-vf", filter_str,
+            "-c:v", "libx264",  # Specify codec for video encoding
+            "-map", "0:v",    # Map video stream
+            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -129,6 +186,9 @@ class FFmpegWrapper:
         FFmpegWrapper.run_command([
             "-i", str(input_path),
             "-vf", filter_str,
+            "-c:v", "libx264",  # Specify codec for video encoding
+            "-map", "0:v",    # Map video stream
+            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -139,13 +199,24 @@ class FFmpegWrapper:
         output_path: Path,
         duration: float,
     ) -> None:
-        filter_str = f"[0:a]apad=pad_dur={duration}[aout]"
-        FFmpegWrapper.run_command([
-            "-i", str(input_path),
-            "-filter_complex", filter_str,
-            "-map", "0:v",
-            "-map", "[aout]",
-            "-c:v", "copy",
-            "-c:a", "aac",
-            str(output_path),
-        ])
+        has_audio = FFmpegWrapper.has_audio_stream(input_path)
+
+        if has_audio:
+            # Video có audio - thêm silence vào audio stream
+            filter_str = f"[0:a]apad=pad_dur={duration}[aout]"
+            FFmpegWrapper.run_command([
+                "-i", str(input_path),
+                "-filter_complex", filter_str,
+                "-map", "0:v",
+                "-map", "[aout]",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                str(output_path),
+            ])
+        else:
+            # Video không có audio - chỉ copy video (không làm gì cả)
+            FFmpegWrapper.run_command([
+                "-i", str(input_path),
+                "-c:v", "copy",
+                str(output_path),
+            ])
