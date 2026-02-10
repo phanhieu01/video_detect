@@ -134,16 +134,16 @@ def check():
     console.print("[bold]Checking dependencies...\n", style="cyan")
 
     try:
-        import yt_dlp
-        console.print("✓ yt-dlp installed", style="green")
-    except ImportError:
-        console.print("✗ yt-dlp not found", style="red")
-
-    try:
         import cv2
         console.print("✓ OpenCV installed", style="green")
     except ImportError:
         console.print("✗ OpenCV not found", style="red")
+
+    try:
+        import PIL
+        console.print("✓ Pillow installed", style="green")
+    except ImportError:
+        console.print("✗ Pillow not found", style="red")
 
     from utils.ffmpeg_wrapper import FFmpegWrapper
     version = FFmpegWrapper.get_version()
