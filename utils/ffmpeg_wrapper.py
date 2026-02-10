@@ -58,7 +58,7 @@ class FFmpegWrapper:
             "-i", str(input_path),
             "-map_metadata", "-1",
             "-map", "0:v",    # Map video stream
-            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
+            "-map", "0:a?",   # Map audio stream if exists (? = optional)
             "-c:v", "copy",
             "-c:a", "copy",
             str(output_path),
@@ -75,7 +75,7 @@ class FFmpegWrapper:
         args = [
             "-i", str(input_path),
             "-map", "0:v",    # Map video stream
-            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
+            "-map", "0:a?",   # Map audio stream if exists (? = optional)
             "-c:v", codec,
             "-crf", str(crf)
         ]
@@ -100,7 +100,7 @@ class FFmpegWrapper:
             "-i", str(input_path),
             "-vf", filter_str,
             "-map", "0:v",    # Map video stream
-            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
+            "-map", "0:a?",   # Map audio stream if exists (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -114,7 +114,7 @@ class FFmpegWrapper:
         has_audio = FFmpegWrapper.has_audio_stream(input_path)
 
         if has_audio:
-            # Video có audio - áp dụng filter cho cả video và audio
+            # Video with audio - apply filter to both video and audio
             atempo_filter = FFmpegWrapper._build_atempo_filter(factor)
             FFmpegWrapper.run_command([
                 "-i", str(input_path),
@@ -123,7 +123,7 @@ class FFmpegWrapper:
                 str(output_path),
             ])
         else:
-            # Video không có audio - chỉ áp dụng filter cho video
+            # Video without audio - only apply filter to video
             FFmpegWrapper.run_command([
                 "-i", str(input_path),
                 "-filter:v", f"setpts={1/factor}*PTS",
@@ -152,7 +152,7 @@ class FFmpegWrapper:
             "-vf", "hflip",
             "-c:v", "libx264",  # Specify codec for video encoding
             "-map", "0:v",    # Map video stream
-            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
+            "-map", "0:a?",   # Map audio stream if exists (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -169,7 +169,7 @@ class FFmpegWrapper:
             "-vf", filter_str,
             "-c:v", "libx264",  # Specify codec for video encoding
             "-map", "0:v",    # Map video stream
-            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
+            "-map", "0:a?",   # Map audio stream if exists (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -188,7 +188,7 @@ class FFmpegWrapper:
             "-vf", filter_str,
             "-c:v", "libx264",  # Specify codec for video encoding
             "-map", "0:v",    # Map video stream
-            "-map", "0:a?",   # Map audio stream nếu có (? = optional)
+            "-map", "0:a?",   # Map audio stream if exists (? = optional)
             "-c:a", "copy",
             str(output_path),
         ])
@@ -202,7 +202,7 @@ class FFmpegWrapper:
         has_audio = FFmpegWrapper.has_audio_stream(input_path)
 
         if has_audio:
-            # Video có audio - thêm silence vào audio stream
+            # Video with audio - add silence to audio stream
             filter_str = f"[0:a]apad=pad_dur={duration}[aout]"
             FFmpegWrapper.run_command([
                 "-i", str(input_path),
@@ -214,7 +214,7 @@ class FFmpegWrapper:
                 str(output_path),
             ])
         else:
-            # Video không có audio - chỉ copy video (không làm gì cả)
+            # Video without audio - only copy video (do nothing)
             FFmpegWrapper.run_command([
                 "-i", str(input_path),
                 "-c:v", "copy",

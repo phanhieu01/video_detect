@@ -38,3 +38,6 @@ transforms:
 metadata:
   strip_metadata: true
   randomize_date: true
+
+output:
+  output_dir: "./downloads/processed"

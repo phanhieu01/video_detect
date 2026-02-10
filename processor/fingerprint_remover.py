@@ -34,7 +34,7 @@ class FingerprintRemover:
         input_path: Path,
         output_path: Path,
     ) -> bool:
-        # Detect file type và xử lý phù hợp
+        # Detect file type and process accordingly
         if self._is_image(input_path):
             return self._remove_image_fingerprint(input_path, output_path)
         else:
@@ -79,7 +79,7 @@ class FingerprintRemover:
         try:
             img = Image.open(input_path)
 
-            # Apply các transform để xóa fingerprint
+            # Apply transforms to remove fingerprint
             if self.change_resolution:
                 img = self._resize_image(img)
 
@@ -89,7 +89,7 @@ class FingerprintRemover:
             if self.add_noise:
                 img = self._add_image_noise(img)
 
-            # Save với quality thấp hơn để xóa fingerprint
+            # Save with lower quality to remove fingerprint
             quality = random.randint(85, 95)
             img.save(output_path, quality=quality)
             return True

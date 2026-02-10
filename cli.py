@@ -6,8 +6,8 @@ from typing import Optional, List
 from rich.console import Console
 from rich.table import Table
 
-from utils import load_config, setup_logging
-from processor import ProcessingPipeline
+from .utils import load_config, setup_logging
+from .processor import ProcessingPipeline
 
 app = typer.Typer(
     name="vdl-pro",

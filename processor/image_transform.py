@@ -8,7 +8,7 @@ try:
 except ImportError:
     np = None
 
-from utils import ensure_dir
+from ..utils import ensure_dir
 
 
 class ImageTransformer:

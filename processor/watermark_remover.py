@@ -9,8 +9,8 @@ except ImportError:
     cv2 = None
     np = None
 
-from utils.ffmpeg_wrapper import FFmpegWrapper
-from utils import ensure_dir
+from ..utils.ffmpeg_wrapper import FFmpegWrapper
+from ..utils import ensure_dir
 
 
 class WatermarkRemover:
