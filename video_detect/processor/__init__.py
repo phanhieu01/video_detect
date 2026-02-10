@@ -6,6 +6,7 @@ from .video_transform import VideoTransformer
 from .image_transform import ImageTransformer
 from .metadata_cleaner import MetadataCleaner
 from .content_inpainting import ContentAwareInpainter
+from .parallel_processor import ParallelProcessor, BatchProcessingPipeline, ProcessingResult
 from .pipeline import ProcessingPipeline
 
 __all__ = [
@@ -15,5 +16,8 @@ __all__ = [
     "ImageTransformer",
     "MetadataCleaner",
     "ContentAwareInpainter",
+    "ParallelProcessor",
+    "BatchProcessingPipeline",
+    "ProcessingResult",
     "ProcessingPipeline",
 ]
