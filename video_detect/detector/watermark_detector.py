@@ -22,7 +22,7 @@ class WatermarkDetector:
     def detect_watermark(
         self,
         video_path: Path,
-        frame_count: int = 10,
+        frame_count: int = 30,
     ) -> Optional[Dict[str, Any]]:
         if cv2 is None:
             return None
@@ -244,9 +244,21 @@ class WatermarkDetector:
                 "template": self._create_tiktok_template(),
                 "expected_position": "bottom_right",
             },
-            "instagram_handle": {
+            "tiktok_note": {
+                "type": "logo",
+                "confidence": 0.80,
+                "template": self._create_tiktok_note_template(),
+                "expected_position": "bottom_right",
+            },
+            "instagram_logo": {
                 "type": "logo",
                 "confidence": 0.75,
+                "template": self._create_instagram_gradient_template(),
+                "expected_position": "bottom_right",
+            },
+            "instagram_handle": {
+                "type": "logo",
+                "confidence": 0.70,
                 "template": self._create_instagram_template(),
                 "expected_position": "bottom_right",
             },
@@ -256,6 +268,92 @@ class WatermarkDetector:
                 "expected_position": "bottom_center",
             },
         }
+
+        # Try to load custom templates from file
+        self._load_custom_templates()
+
+    def _load_custom_templates(self):
+        """Load custom templates from templates directory"""
+        from pathlib import Path
+
+        templates_dir = Path(__file__).parent / "templates"
+        if templates_dir.exists():
+            for template_file in templates_dir.glob("*.png"):
+                name = template_file.stem
+                if CV2_AVAILABLE:
+                    template_img = cv2.imread(str(template_file))
+                    if template_img is not None:
+                        self.common_patterns[f"custom_{name}"] = {
+                            "type": "logo",
+                            "confidence": 0.90,
+                            "template": template_img,
+                            "expected_position": "auto",
+                        }
+
+    def _create_tiktok_template(self) -> Optional[np.ndarray]:
+        if cv2 is None or np is None:
+            return None
+
+        # Create more realistic TikTok logo template
+        template = np.ones((50, 50, 3), dtype=np.uint8) * 240
+
+        # TikTok logo colors (cyan and pink/red)
+        cyan = (0, 255, 255)
+        pink = (254, 0, 100)
+
+        # Draw 8 note shape
+        center_x, center_y = 25, 25
+
+        # Left cyan curve
+        cv2.ellipse(template, (center_x - 5, center_y), (8, 12), 0, 0, 180, cyan, 3)
+
+        # Right pink/red curve
+        cv2.ellipse(template, (center_x + 5, center_y), (8, 12), 0, 0, 180, pink, 3)
+
+        return template
+
+    def _create_tiktok_note_template(self) -> Optional[np.ndarray]:
+        """Create TikTok musical note template"""
+        if cv2 is None or np is None:
+            return None
+
+        template = np.ones((60, 60, 3), dtype=np.uint8) * 255
+
+        # Draw musical note symbol
+        cyan = (0, 255, 255)
+        pink = (254, 0, 100)
+
+        # Note head
+        cv2.circle(template, (30, 45), 8, cyan, -1)
+
+        # Note stem
+        cv2.rectangle(template, (36, 15), (38, 45), cyan, -1)
+
+        # Note flag (curved)
+        cv2.ellipse(template, (38, 20), (8, 12), 0, 180, 270, pink, 3)
+
+        return template
+
+    def _create_instagram_gradient_template(self) -> Optional[np.ndarray]:
+        """Create Instagram gradient logo template"""
+        if cv2 is None or np is None:
+            return None
+
+        template = np.ones((50, 50, 3), dtype=np.uint8) * 255
+
+        # Create gradient effect (yellow to purple)
+        for i in range(15):
+            color = (
+                int(255 - i * 5),   # R: yellow to purple
+                int(100 + i * 7),  # G
+                int(150 + i * 7),  # B
+            )
+            cv2.circle(template, (25, 25), 15 - i, color, -1)
+
+        # Camera outline
+        cv2.circle(template, (25, 25), 15, (50, 50, 50), 2)
+
+        return template
     
     def _create_tiktok_template(self) -> Optional[np.ndarray]:
         if cv2 is None or np is None:

@@ -37,7 +37,7 @@ class FingerprintAnalyzer:
             "potential_fingerprints": [],
         }
         
-        sample_indices = np.linspace(0, total_frames - 1, min(20, total_frames), dtype=int)
+        sample_indices = np.linspace(0, total_frames - 1, min(30, total_frames), dtype=int)
         frames_hash = []
         
         for idx in sample_indices:
@@ -75,7 +75,7 @@ class FingerprintAnalyzer:
     
     def _compute_frame_hash(self, frame: np.ndarray) -> str:
         resized = cv2.resize(frame, (32, 32))
-        return hashlib.md5(resized.tobytes()).hexdigest()
+        return hashlib.sha256(resized.tobytes()).hexdigest()
     
     def _analyze_hash_consistency(self, hashes: list) -> float:
         if len(hashes) < 2:
