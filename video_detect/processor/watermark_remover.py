@@ -22,7 +22,7 @@ class WatermarkRemover:
         self.watermark_region = self.config.get("watermark_region", {})
         
         if self.auto_detect:
-            from detector import WatermarkDetector
+            from ..detector import WatermarkDetector
             self.detector = WatermarkDetector(self.config)
         else:
             self.detector = None

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import tempfile
 import shutil
 import logging
-from utils.ffmpeg_wrapper import FFmpegWrapper
+from ..utils.ffmpeg_wrapper import FFmpegWrapper
 
 try:
     from PIL import Image, ImageEnhance

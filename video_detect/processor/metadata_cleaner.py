@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import random
 from PIL import Image
-from utils.ffmpeg_wrapper import FFmpegWrapper
+from ..utils.ffmpeg_wrapper import FFmpegWrapper
 
 
 class MetadataCleaner:

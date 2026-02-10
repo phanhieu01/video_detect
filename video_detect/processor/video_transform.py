@@ -5,7 +5,7 @@ import random
 import tempfile
 import shutil
 import logging
-from utils.ffmpeg_wrapper import FFmpegWrapper
+from ..utils.ffmpeg_wrapper import FFmpegWrapper
 
 logger = logging.getLogger(__name__)
 

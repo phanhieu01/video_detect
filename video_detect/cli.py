@@ -38,7 +38,7 @@ def detect(
 
     console.print(f"Analyzing: {file_path.name}", style="cyan")
 
-    from detector import WatermarkDetector, FingerprintAnalyzer
+    from .detector import WatermarkDetector, FingerprintAnalyzer
     
     watermark_detector = WatermarkDetector(config.get("watermark", {}))
     result = watermark_detector.detect_watermark(file_path)
@@ -145,7 +145,7 @@ def check():
     except ImportError:
         console.print("✗ Pillow not found", style="red")
 
-    from utils.ffmpeg_wrapper import FFmpegWrapper
+    from .utils.ffmpeg_wrapper import FFmpegWrapper
     version = FFmpegWrapper.get_version()
     if "FFmpeg not found" not in version:
         console.print(f"✓ {version}", style="green")
