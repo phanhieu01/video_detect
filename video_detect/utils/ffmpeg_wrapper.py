@@ -2,7 +2,9 @@
 
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+
+from .gpu_helper import get_gpu_helper
 
 
 class FFmpegWrapper:
@@ -220,3 +222,71 @@ class FFmpegWrapper:
                 "-c:v", "copy",
                 str(output_path),
             ])
+
+    @staticmethod
+    def get_gpu_hwaccel_params() -> List[str]:
+        """Get GPU hardware acceleration parameters for FFmpeg"""
+        gpu_helper = get_gpu_helper()
+        return gpu_helper.get_ffmpeg_gpu_params()
+
+    @staticmethod
+    def run_command_gpu(args: List[str], input_file: Optional[Path] = None) -> str:
+        """Run FFmpeg command with GPU acceleration if available"""
+        gpu_helper = get_gpu_helper()
+
+        if not gpu_helper.is_available():
+            return FFmpegWrapper.run_command(args, input_file)
+
+        cmd = ["ffmpeg", "-y"]
+        cmd.extend(gpu_helper.get_ffmpeg_gpu_params())
+        cmd.extend(args)
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(f"FFmpeg error: {result.stderr}")
+
+        return result.stdout
+
+    @staticmethod
+    def re_encode_gpu(
+        input_path: Path,
+        output_path: Path,
+        codec: str = "h264_nvenc",  # NVIDIA GPU encoding
+        bitrate: Optional[str] = None,
+        crf: int = 23,
+    ) -> None:
+        """Re-encode video using GPU acceleration"""
+        gpu_helper = get_gpu_helper()
+
+        if not gpu_helper.cuda_available:
+            # Fallback to CPU encoding
+            return FFmpegWrapper.re_encode(input_path, output_path, "libx264", bitrate, crf)
+
+        args = ["-i", str(input_path)]
+        args.extend(gpu_helper.get_ffmpeg_gpu_params())
+
+        args.extend([
+            "-c:v", codec,
+            "-crf", str(crf),
+            "-preset", "p4",  # Medium preset for NVENC
+            "-map", "0:v",
+            "-map", "0:a?",  # Map audio stream if exists
+        ])
+
+        if bitrate:
+            args.extend(["-b:v", bitrate])
+
+        args.extend(["-c:a", "aac", "-b:a", "192k", str(output_path)])
+        FFmpegWrapper.run_command_gpu(args)
+
+    @staticmethod
+    def check_gpu_info() -> Dict[str, Any]:
+        """Check GPU availability and info"""
+        gpu_helper = get_gpu_helper()
+        return gpu_helper.get_info()

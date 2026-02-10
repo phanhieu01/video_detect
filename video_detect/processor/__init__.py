@@ -5,6 +5,7 @@ from .fingerprint_remover import FingerprintRemover
 from .video_transform import VideoTransformer
 from .image_transform import ImageTransformer
 from .metadata_cleaner import MetadataCleaner
+from .content_inpainting import ContentAwareInpainter
 from .pipeline import ProcessingPipeline
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "VideoTransformer",
     "ImageTransformer",
     "MetadataCleaner",
+    "ContentAwareInpainter",
     "ProcessingPipeline",
 ]
