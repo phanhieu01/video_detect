@@ -1,5 +1,6 @@
 """CNN-based watermark detector using deep learning"""
 
+import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 import numpy as np
@@ -16,50 +17,52 @@ try:
     import torch.nn.functional as F
     from torchvision import transforms
     TORCH_AVAILABLE = True
+
+    class WatermarkCNN(nn.Module):
+        """Simple CNN for watermark detection"""
+
+        def __init__(self, input_channels: int = 3):
+            super(WatermarkCNN, self).__init__()
+
+            # Encoder
+            self.conv1 = nn.Conv2d(input_channels, 32, kernel_size=3, padding=1)
+            self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+            self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+
+            self.pool = nn.MaxPool2d(2, 2)
+            self.dropout = nn.Dropout(0.3)
+
+            # Decoder for localization
+            self.upconv1 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+            self.upconv2 = nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2)
+
+            # Output layer
+            self.conv_out = nn.Conv2d(32, 1, kernel_size=1)
+
+        def forward(self, x):
+            # Encoder
+            x1 = F.relu(self.conv1(x))
+            x1 = self.pool(x1)
+
+            x2 = F.relu(self.conv2(x1))
+            x2 = self.pool(x2)
+
+            x3 = F.relu(self.conv3(x2))
+            x3 = self.pool(x3)
+
+            # Decoder
+            x = F.relu(self.upconv1(x3))
+            x = F.relu(self.upconv2(x))
+
+            # Output
+            x = torch.sigmoid(self.conv_out(x))
+
+            return x
+
 except ImportError:
     TORCH_AVAILABLE = False
 
-
-class WatermarkCNN(nn.Module):
-    """Simple CNN for watermark detection"""
-
-    def __init__(self, input_channels: int = 3):
-        super(WatermarkCNN, self).__init__()
-
-        # Encoder
-        self.conv1 = nn.Conv2d(input_channels, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-
-        self.pool = nn.MaxPool2d(2, 2)
-        self.dropout = nn.Dropout(0.3)
-
-        # Decoder for localization
-        self.upconv1 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.upconv2 = nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2)
-
-        # Output layer
-        self.conv_out = nn.Conv2d(32, 1, kernel_size=1)
-
-    def forward(self, x):
-        # Encoder
-        x1 = F.relu(self.conv1(x))
-        x1 = self.pool(x1)
-
-        x2 = F.relu(self.conv2(x1))
-        x2 = self.pool(x2)
-
-        x3 = F.relu(self.conv3(x2))
-        x3 = self.pool(x3)
-
-        # Decoder
-        x = F.relu(self.upconv1(x3))
-        x = F.relu(self.upconv2(x))
-
-        # Output
-        x = torch.sigmoid(self.conv_out(x))
-
-        return x
+logger = logging.getLogger(__name__)
 
 
 class CNNDetector:
@@ -70,7 +73,11 @@ class CNNDetector:
         self.confidence_threshold = self.config.get("cnn_confidence", 0.7)
         self.use_gpu = self.config.get("use_gpu", True) and TORCH_AVAILABLE
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() and self.use_gpu else "cpu")
+        # Only set device if torch is available
+        if TORCH_AVAILABLE:
+            self.device = torch.device("cuda" if torch.cuda.is_available() and self.use_gpu else "cpu")
+        else:
+            self.device = None
 
         if TORCH_AVAILABLE:
             self.model = WatermarkCNN()
@@ -85,6 +92,7 @@ class CNNDetector:
             ])
         else:
             self.model = None
+            self.transform = None
 
     def detect_watermark(
         self,

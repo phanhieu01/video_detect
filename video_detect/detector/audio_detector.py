@@ -1,5 +1,6 @@
 """Audio watermark detector using spectrogram analysis"""
 
+import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import numpy as np
@@ -16,6 +17,8 @@ try:
     LIBROSA_AVAILABLE = True
 except ImportError:
     LIBROSA_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
 class AudioDetector:

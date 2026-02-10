@@ -130,3 +130,69 @@ class QualityAssessment:
             return "acceptable"
         else:
             return "poor"
+
+    @staticmethod
+    def _determine_quality(psnr: float, ssim: float) -> str:
+        """
+        Determine quality category based on PSNR and SSIM values.
+
+        This is a convenience method for quality assessment.
+        """
+        if psnr >= 40 and ssim >= 0.95:
+            return "excellent"
+        elif psnr >= 30 and ssim >= 0.85:
+            return "good"
+        elif psnr >= 25 and ssim >= 0.75:
+            return "fair"
+        else:
+            return "poor"
+
+    @staticmethod
+    def assess_video_quality(video_path: Path) -> Dict[str, Any]:
+        """
+        Assess video quality by sampling frames.
+
+        Returns basic video metrics and quality assessment.
+        """
+        if not CV2_AVAILABLE:
+            return {"error": "OpenCV not available"}
+
+        cap = cv2.VideoCapture(str(video_path))
+        if not cap.isOpened():
+            return {"error": "Cannot open video file"}
+
+        try:
+            # Get video properties
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+            # Sample a few frames
+            frames = []
+            sample_indices = [0, frame_count // 2, frame_count - 1] if frame_count > 2 else [0]
+
+            for idx in sample_indices:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                ret, frame = cap.read()
+                if ret:
+                    frames.append(frame)
+
+            if not frames:
+                return {"error": "No frames could be read"}
+
+            # Calculate basic quality metrics from sampled frames
+            avg_brightness = [np.mean(frame) for frame in frames]
+            avg_contrast = [np.std(frame) for frame in frames]
+
+            return {
+                "fps": fps,
+                "frame_count": frame_count,
+                "resolution": (width, height),
+                "sampled_frames": len(frames),
+                "avg_brightness": float(np.mean(avg_brightness)),
+                "avg_contrast": float(np.mean(avg_contrast)),
+                "quality": "good" if np.mean(avg_contrast) > 50 else "acceptable",
+            }
+        finally:
+            cap.release()

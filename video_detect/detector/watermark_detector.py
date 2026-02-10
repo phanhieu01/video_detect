@@ -1,5 +1,6 @@
 """Automatic watermark detector using template matching and edge detection"""
 
+import logging
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 import numpy as np
@@ -8,6 +9,8 @@ try:
     import cv2
 except ImportError:
     cv2 = None
+
+logger = logging.getLogger(__name__)
 
 
 class WatermarkDetector:
@@ -387,19 +390,21 @@ class WatermarkDetector:
         return template
     
     def update_config(self, video_path: Path) -> bool:
+        """Detect watermark and update configuration with region info"""
         result = self.detect_watermark(video_path)
-        
+
         if result and result["found"]:
             region = result["region"]
-            print(f"Watermark detected: {result['method']}")
-            print(f"Region: x={region['x']}, y={region['y']}, w={region['width']}, h={region['height']}")
-            
+            logger.info(f"Watermark detected: {result['method']}")
+            logger.info(f"Region: x={region['x']}, y={region['y']}, w={region['width']}, h={region['height']}")
+
             watermark_config = {
                 "enabled": True,
                 "method": "inpaint",
                 "watermark_region": region,
             }
-            
+
             return True
-        
+
+        logger.info("No watermark detected")
         return False
