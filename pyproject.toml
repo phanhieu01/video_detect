@@ -1,7 +1,7 @@
 [project]
-name = "video-downloader-pro"
+name = "video-detect-pro"
 version = "0.1.0"
-description = "Download and process videos/images from social media - remove watermark and fingerprints"
+description = "Detect and remove watermarks and fingerprints from video/image files"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -49,4 +49,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["downloader", "processor", "utils", "cli.py"]
+packages = ["."]

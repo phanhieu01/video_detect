@@ -1,18 +1,3 @@
-download:
-  output_dir: "./downloads"
-  format: "bestvideo+bestaudio/best"
-  merge_output_format: "mp4"
-  quality: "best"
-  proxy: null
-  cookies_file: null
-  user_agent: null
-  no_watermark: true
-
-quality:
-  min_height: 720          # Độ phân giải tối thiểu (480, 720, 1080, 2160)
-  prefer_4k: false        # Ưu tiên 4K nếu có
-  max_audio_bitrate: "320k"
-
 watermark:
   enabled: true
   auto_detect: true
